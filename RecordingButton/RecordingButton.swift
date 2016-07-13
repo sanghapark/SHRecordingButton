@@ -62,7 +62,7 @@ class RecordingButton: UIButton {
         self.layer.cornerRadius = self.frame.height / 2
         self.backgroundColor = UIColor.redColor()
         self.addTarget(self, action: #selector(RecordingButton.didTouchDown(_:)), forControlEvents: .TouchDown)
-        self.addTarget(self, action: #selector(RecordingButton.didTouchUpInside(_:)), forControlEvents: .TouchUpInside)
+        self.addTarget(self, action: #selector(RecordingButton.didTouchUp(_:)), forControlEvents: [.TouchUpInside, .TouchUpOutside])
         
         
         layer.addSublayer(progressLayerBackground)
@@ -80,14 +80,21 @@ class RecordingButton: UIButton {
     
     func didTouchDown(sender: UIButton) {
         print("touch down")
+        
+        self.timer?.invalidate()
+        self.timer = nil
+        self.timeoutTimer?.invalidate()
+        self.timeoutTimer = nil
+        
         delegate?.startRecording()
         
+        self.progress = 0.0
+        updateProgress()
         timer = NSTimer.scheduledTimerWithTimeInterval(0.1, target: self, selector: #selector(RecordingButton.updateProgress), userInfo: nil, repeats: true)
         timeoutTimer = NSTimer.scheduledTimerWithTimeInterval(timeout, target: self, selector: #selector(RecordingButton.timeoutRecording), userInfo: nil, repeats: false)
-        
     }
     
-    func didTouchUpInside(sender: UIButton) {
+    func didTouchUp(sender: UIButton) {
         print("touch up inside")
         delegate?.endRecording()
         invalidateTimers()
@@ -114,8 +121,10 @@ class RecordingButton: UIButton {
     }
     
     private func invalidateTimers() {
+        enabled = false
         let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.1 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
+            self.enabled = true
             self.progressLayer.hidden = true
             self.progressLayer.strokeEnd = 0
             self.progress = 0.0
