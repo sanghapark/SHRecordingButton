@@ -17,7 +17,19 @@ protocol RecordingButtonDelegate {
 
 class RecordingButton: UIButton {
     
+    enum Mode {
+        case Pressing
+        case Pressed
+    }
+    
+    enum Status {
+        case Idle
+        case Recording
+    }
+    
     var delegate : RecordingButtonDelegate?
+    var mode: Mode = Mode.Pressing
+    var status: Status = Status.Idle
     
     var timeout:Double = 10
     var timeoutTimer: NSTimer? = nil
@@ -81,23 +93,24 @@ class RecordingButton: UIButton {
     func didTouchDown(sender: UIButton) {
         print("touch down")
         
-        self.timer?.invalidate()
-        self.timer = nil
-        self.timeoutTimer?.invalidate()
-        self.timeoutTimer = nil
-        
-        delegate?.startRecording()
-        
-        self.progress = 0.0
-        updateProgress()
-        timer = NSTimer.scheduledTimerWithTimeInterval(0.1, target: self, selector: #selector(RecordingButton.updateProgress), userInfo: nil, repeats: true)
-        timeoutTimer = NSTimer.scheduledTimerWithTimeInterval(timeout, target: self, selector: #selector(RecordingButton.timeoutRecording), userInfo: nil, repeats: false)
+        if mode == Mode.Pressing {
+            startRecording()
+        } else {
+            if status == Status.Idle {
+                startRecording()
+            } else if status == Status.Recording {
+                delegate?.endRecording()
+                endRecording()
+            }
+        }
     }
     
     func didTouchUp(sender: UIButton) {
         print("touch up inside")
-        delegate?.endRecording()
-        invalidateTimers()
+        if mode == Mode.Pressing {
+            delegate?.endRecording()
+            endRecording()
+        }
     }
 
     
@@ -117,14 +130,31 @@ class RecordingButton: UIButton {
     func timeoutRecording() {
         print("time out recording...")
         delegate?.endRecording()
-        invalidateTimers()
+        endRecording()
     }
     
-    private func invalidateTimers() {
+    private func startRecording() {
+        self.timer?.invalidate()
+        self.timer = nil
+        self.timeoutTimer?.invalidate()
+        self.timeoutTimer = nil
+        
+        status = Status.Recording
+        
+        delegate?.startRecording()
+        
+        self.progress = 0.0
+        updateProgress()
+        timer = NSTimer.scheduledTimerWithTimeInterval(0.1, target: self, selector: #selector(RecordingButton.updateProgress), userInfo: nil, repeats: true)
+        timeoutTimer = NSTimer.scheduledTimerWithTimeInterval(timeout, target: self, selector: #selector(RecordingButton.timeoutRecording), userInfo: nil, repeats: false)
+    }
+    
+    private func endRecording() {
         enabled = false
         let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.1 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
             self.enabled = true
+            self.status = Status.Idle
             self.progressLayer.hidden = true
             self.progressLayer.strokeEnd = 0
             self.progress = 0.0

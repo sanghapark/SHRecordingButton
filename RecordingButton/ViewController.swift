@@ -25,7 +25,9 @@ class ViewController: UIViewController {
         let screenH = UIScreen.mainScreen().bounds.height
         let rect = CGRectMake(0, 0, 70, 70)
         recordingButton = RecordingButton(frame: rect)
-        recordingButton?.timeout = 30.0
+//        recordingButton!.mode = .Pressed
+        recordingButton!.mode = .Pressing
+        recordingButton!.timeout = 30.0
         recordingButton!.center = CGPointMake(screenW / 2, screenH - 70)
         recordingButton!.delegate = self
         view.addSubview(recordingButton!)
