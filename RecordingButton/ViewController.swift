@@ -68,7 +68,7 @@ class ViewController: UIViewController {
     }
 
     func backRecording() {
-        
+        recordingButton!.backRecording()
     }
 
 }
@@ -89,6 +89,12 @@ extension ViewController: RecordingButtonDelegate {
     
     func updateProgress(recordingTimeInSec: Double) {
         recordingTimeLabel?.updateTime(recordingTimeInSec)
+    }
+    
+    func didBecomeIdle() {
+        cancelButton.hidden = true
+        backButton.hidden = true
+        recordingTimeLabel?.endRecording()
     }
 }
 

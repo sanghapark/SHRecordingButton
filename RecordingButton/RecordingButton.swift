@@ -13,6 +13,7 @@ protocol RecordingButtonDelegate {
     func startRecording()
     func updateProgress(recordingTimeInSec: Double)
     func endRecording()
+    func didBecomeIdle()
 }
 
 class RecordingButton: UIView {
@@ -37,9 +38,7 @@ class RecordingButton: UIView {
     var timeoutTimer: NSTimer? = nil
     var timer: NSTimer? = nil
     
-//    var progress: Float = 0
-    
-    
+
     var totalRecordingSec: Double {
         var total: Double = 0.0
         for time in recordingTimes {
@@ -238,6 +237,18 @@ class RecordingButton: UIView {
     func backRecording() {
         self.recordingTimes.removeLast()
         
+        let progress = totalRecordingSec
+        
+        progressLayer.path = UIBezierPath(semiCircleInSize: self.frame.size, inset: CGFloat(inset)).CGPath
+        progressLayer.strokeColor = lineColor.CGColor
+        progressLayer.lineWidth = CGFloat(lineWidth)
+        progressLayer.strokeEnd = CGFloat(progress) / CGFloat(timeout)
+        
+        delegate?.updateProgress(progress)
+        
+        if recordingTimes.count <= 0 {
+            delegate?.didBecomeIdle()
+        }
     }
 }
 
