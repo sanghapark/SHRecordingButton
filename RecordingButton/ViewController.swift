@@ -87,7 +87,7 @@ extension ViewController: RecordingButtonDelegate {
         recordingTimeLabel?.endRecording()
     }
     
-    func updateProgress(recordingTimeInSec: Float) {
+    func updateProgress(recordingTimeInSec: Double) {
         recordingTimeLabel?.updateTime(recordingTimeInSec)
     }
 }

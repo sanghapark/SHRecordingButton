@@ -11,7 +11,7 @@ import UIKit
 
 protocol RecordingButtonDelegate {
     func startRecording()
-    func updateProgress(recordingTimeInSec: Float)
+    func updateProgress(recordingTimeInSec: Double)
     func endRecording()
 }
 
@@ -23,6 +23,7 @@ class RecordingButton: UIView {
     
     enum Status {
         case Idle
+        case Paused
         case Recording
     }
     
@@ -36,7 +37,19 @@ class RecordingButton: UIView {
     var timeoutTimer: NSTimer? = nil
     var timer: NSTimer? = nil
     
-    var progress: Float = 0
+//    var progress: Float = 0
+    
+    
+    var totalRecordingSec: Double {
+        var total: Double = 0.0
+        for time in recordingTimes {
+            total += time
+        }
+        return total
+    }
+    
+    var startRecordingTime: Double = 0.0
+    var recordingTimes = [Double]()
     
     private lazy var progressLayer: CAShapeLayer = {
         let shape = CAShapeLayer()
@@ -103,12 +116,18 @@ class RecordingButton: UIView {
         
         if mode == Mode.Pressing {
             startRecording()
-        } else {
+        }
+        else {
             if status == Status.Idle {
                 startRecording()
-            } else if status == Status.Recording {
+            }
+            else if status == Status.Paused {
+                recordingTimes.append(0.0)
+                startRecording()
+            }
+            else if status == Status.Recording {
                 delegate?.endRecording()
-                endRecording()
+                pauseRecording()
             }
         }
     }
@@ -117,22 +136,30 @@ class RecordingButton: UIView {
         print("touch up inside")
         if mode == Mode.Pressing {
             delegate?.endRecording()
-            endRecording()
+            pauseRecording()
         }
     }
     
     
     func updateProgress() {
         print("updateProgress")
-        progress += 0.1
         
-        delegate?.updateProgress(progress)
+        let recordingTime = NSDate().timeIntervalSince1970 - self.startRecordingTime
+        if recordingTimes.count > 0 {
+            recordingTimes[recordingTimes.count-1] = recordingTime
+        } else {
+            recordingTimes.append(recordingTime)
+        }
+        
+        let progress = totalRecordingSec
         
         progressLayer.hidden = false
         progressLayer.path = UIBezierPath(semiCircleInSize: self.frame.size, inset: CGFloat(inset)).CGPath
         progressLayer.strokeColor = lineColor.CGColor
         progressLayer.lineWidth = CGFloat(lineWidth)
         progressLayer.strokeEnd = CGFloat(progress) / CGFloat(timeout)
+        
+        delegate?.updateProgress(progress)
     }
     
     func timeoutRecording() {
@@ -154,14 +181,35 @@ class RecordingButton: UIView {
         button.layer.cornerRadius = button.frame.height / 5
         
         delegate?.startRecording()
-        self.progress = 0.0
+        self.startRecordingTime = NSDate().timeIntervalSince1970
+
         updateProgress()
         timer = NSTimer.scheduledTimerWithTimeInterval(0.1, target: self, selector: #selector(RecordingButton.updateProgress), userInfo: nil, repeats: true)
-        timeoutTimer = NSTimer.scheduledTimerWithTimeInterval(timeout, target: self, selector: #selector(RecordingButton.timeoutRecording), userInfo: nil, repeats: false)
+        timeoutTimer = NSTimer.scheduledTimerWithTimeInterval(timeout-totalRecordingSec, target: self, selector: #selector(RecordingButton.timeoutRecording), userInfo: nil, repeats: false)
     }
+    
+    
+    private func pauseRecording() {
+        button.enabled = false
+        
+        self.status = Status.Paused
+        
+        self.button.enabled = true
+        self.button.frame = CGRectMake(0, 0, self.button.frame.width * 1.3, self.button.frame.height * 1.3)
+        self.button.center = CGPointMake(self.frame.width / 2.0, self.frame.height / 2.0)
+        self.button.layer.cornerRadius = self.button.frame.height / 2.0
+
+        self.timer?.invalidate()
+        self.timer = nil
+        self.timeoutTimer?.invalidate()
+        self.timeoutTimer = nil
+    }
+    
+    
     
     private func endRecording() {
         button.enabled = false
+        
         let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.1 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
             self.status = Status.Idle
@@ -170,7 +218,7 @@ class RecordingButton: UIView {
             self.button.frame = CGRectMake(0, 0, self.button.frame.width * 1.3, self.button.frame.height * 1.3)
             self.button.center = CGPointMake(self.frame.width / 2.0, self.frame.height / 2.0)
             self.button.layer.cornerRadius = self.button.frame.height / 2.0
-
+            
             self.timer?.invalidate()
             self.timer = nil
             self.timeoutTimer?.invalidate()
@@ -182,7 +230,14 @@ class RecordingButton: UIView {
     func cancelRecording() {
         self.progressLayer.hidden = true
         self.progressLayer.strokeEnd = 0
-        self.progress = 0.0
+        
+        self.startRecordingTime = 0.0
+        self.recordingTimes.removeAll()
+    }
+    
+    func backRecording() {
+        self.recordingTimes.removeLast()
+        
     }
 }
 

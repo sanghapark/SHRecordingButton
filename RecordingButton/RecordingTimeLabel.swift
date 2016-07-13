@@ -42,7 +42,7 @@ class RecordingTimeLabel: UILabel {
     }
     
     
-    func updateTime(recordingTime: Float) {
+    func updateTime(recordingTime: Double) {
         text = convertSecToMinSec(recordingTime)
         sizeToFit()
     }
@@ -63,7 +63,7 @@ class RecordingTimeLabel: UILabel {
     }
 
     
-    private func convertSecToMinSec(sec: Float) -> String {
+    private func convertSecToMinSec(sec: Double) -> String {
         let secInt = Int(sec)
         let secondsOnesPlace = secInt % 10
         let secondsTensPlace = (secInt % 60) / 10
