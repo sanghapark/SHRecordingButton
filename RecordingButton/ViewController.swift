@@ -23,12 +23,12 @@ class ViewController: UIViewController {
     func initViews() {
         let screenW = UIScreen.mainScreen().bounds.width
         let screenH = UIScreen.mainScreen().bounds.height
-        let rect = CGRectMake(0, 0, 70, 70)
-        recordingButton = RecordingButton(frame: rect)
-//        recordingButton!.mode = .Pressed
-        recordingButton!.mode = .Pressing
+//        recordingButton = RecordingButton(frame: rect)
+        recordingButton = RecordingButton(center: CGPointMake(screenW / 2, screenH - 70), size: CGSizeMake(70, 70))
+        recordingButton!.mode = .Pressed
+//        recordingButton!.mode = .Pressing
         recordingButton!.timeout = 30.0
-        recordingButton!.center = CGPointMake(screenW / 2, screenH - 70)
+//        recordingButton!.center = CGPointMake(screenW / 2, screenH - 70)
         recordingButton!.delegate = self
         view.addSubview(recordingButton!)
         

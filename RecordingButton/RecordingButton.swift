@@ -15,8 +15,7 @@ protocol RecordingButtonDelegate {
     func endRecording()
 }
 
-class RecordingButton: UIButton {
-    
+class RecordingButton: UIView {
     enum Mode {
         case Pressing
         case Pressed
@@ -27,6 +26,8 @@ class RecordingButton: UIButton {
         case Recording
     }
     
+    let button: UIButton = UIButton(frame: CGRectZero)
+    
     var delegate : RecordingButtonDelegate?
     var mode: Mode = Mode.Pressing
     var status: Status = Status.Idle
@@ -36,7 +37,7 @@ class RecordingButton: UIButton {
     var timer: NSTimer? = nil
     
     var progress: Float = 0
-
+    
     private lazy var progressLayer: CAShapeLayer = {
         let shape = CAShapeLayer()
         shape.strokeStart = CGFloat(0.0)
@@ -55,32 +56,39 @@ class RecordingButton: UIButton {
     
     final let inset: CGFloat = 5.0
     final let lineWidth: CGFloat = 5.0
-    final let lineColor = UIColor.blueColor()
+    final let lineColor = UIColor.redColor()
     
-    
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setup()
-    }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setup()
     }
     
+    init(center: CGPoint, size: CGSize) {
+        super.init(frame: CGRectZero)
+        super.frame.size = size
+        super.center = center
+        setup()
+    }
+    
     
     func setup() {
+        print(self.frame)
         self.layer.cornerRadius = self.frame.height / 2
-        self.backgroundColor = UIColor.redColor()
-        self.addTarget(self, action: #selector(RecordingButton.didTouchDown(_:)), forControlEvents: .TouchDown)
-        self.addTarget(self, action: #selector(RecordingButton.didTouchUp(_:)), forControlEvents: [.TouchUpInside, .TouchUpOutside])
+        self.backgroundColor = UIColor.clearColor()
         
+        
+        button.frame = CGRectMake(0, 0, frame.width, frame.height)
+        button.layer.cornerRadius = button.frame.height / 2
+        button.addTarget(self, action: #selector(RecordingButton.didTouchDown(_:)), forControlEvents: .TouchDown)
+        button.addTarget(self, action: #selector(RecordingButton.didTouchUp(_:)), forControlEvents: [.TouchUpInside, .TouchUpOutside])
+        button.backgroundColor = UIColor.redColor()
+        addSubview(button)
         
         layer.addSublayer(progressLayerBackground)
         
         progressLayerBackground.hidden = false
-        progressLayerBackground.path = UIBezierPath(semiCircleInRect: bounds, inset: CGFloat(inset)).CGPath
+        progressLayerBackground.path = UIBezierPath(semiCircleInSize: self.frame.size, inset: CGFloat(inset)).CGPath
         progressLayerBackground.strokeColor = UIColor.lightGrayColor().CGColor
         progressLayerBackground.lineWidth = CGFloat(lineWidth)
         progressLayerBackground.strokeEnd = 1.0
@@ -112,7 +120,7 @@ class RecordingButton: UIButton {
             endRecording()
         }
     }
-
+    
     
     func updateProgress() {
         print("updateProgress")
@@ -121,7 +129,7 @@ class RecordingButton: UIButton {
         delegate?.updateProgress(progress)
         
         progressLayer.hidden = false
-        progressLayer.path = UIBezierPath(semiCircleInRect: bounds, inset: CGFloat(inset)).CGPath
+        progressLayer.path = UIBezierPath(semiCircleInSize: self.frame.size, inset: CGFloat(inset)).CGPath
         progressLayer.strokeColor = lineColor.CGColor
         progressLayer.lineWidth = CGFloat(lineWidth)
         progressLayer.strokeEnd = CGFloat(progress) / CGFloat(timeout)
@@ -133,6 +141,7 @@ class RecordingButton: UIButton {
         endRecording()
     }
     
+    
     private func startRecording() {
         self.timer?.invalidate()
         self.timer = nil
@@ -140,9 +149,11 @@ class RecordingButton: UIButton {
         self.timeoutTimer = nil
         
         status = Status.Recording
+        button.frame = CGRectMake(0, 0, button.frame.width / 1.3, button.frame.height / 1.3)
+        button.center = CGPointMake(frame.width / 2, frame.height / 2)
+        button.layer.cornerRadius = button.frame.height / 5
         
         delegate?.startRecording()
-        
         self.progress = 0.0
         updateProgress()
         timer = NSTimer.scheduledTimerWithTimeInterval(0.1, target: self, selector: #selector(RecordingButton.updateProgress), userInfo: nil, repeats: true)
@@ -150,11 +161,14 @@ class RecordingButton: UIButton {
     }
     
     private func endRecording() {
-        enabled = false
+        button.enabled = false
         let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.1 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
-            self.enabled = true
+            self.button.enabled = true
             self.status = Status.Idle
+            self.button.frame = CGRectMake(0, 0, self.button.frame.width * 1.3, self.button.frame.height * 1.3)
+            self.button.center = CGPointMake(self.frame.width / 2.0, self.frame.height / 2.0)
+            self.button.layer.cornerRadius = self.button.frame.height / 2.0
             self.progressLayer.hidden = true
             self.progressLayer.strokeEnd = 0
             self.progress = 0.0
@@ -167,19 +181,16 @@ class RecordingButton: UIButton {
 }
 
 
-
 extension UIBezierPath {
-    convenience init(semiCircleInRect rect: CGRect, inset: CGFloat) {
+    convenience init(semiCircleInSize size: CGSize, inset: CGFloat) {
         self.init()
-        let center = CGPointMake(CGRectGetWidth(rect) / CGFloat(2.0),
-                                 CGRectGetHeight(rect) / CGFloat(2.0))
-        //        let minSize = min(CGRectGetWidth(rect), CGRectGetHeight(rect)) / 3
-//        let minSize:CGFloat = 80.0
-        let minSize: CGFloat = rect.size.width + 20
+        let center = CGPointMake(size.width / CGFloat(2.0), size.height / CGFloat(2.0))
+        let minSize: CGFloat = size.width + 20
         let radius = minSize / CGFloat(2.0) - inset
         
         let startAngle = CGFloat(1.5 * M_PI)
         let endAngle = CGFloat(3.5 * M_PI)
+
         self.addArcWithCenter(center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
     }
 }
