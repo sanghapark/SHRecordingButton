@@ -14,6 +14,7 @@ class ViewController: UIViewController {
     var recordingTimeLabel: RecordingTimeLabel?
     
     var cancelButton = UIButton(frame: CGRectZero)
+    var backButton = UIButton(frame: CGRectZero)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,11 +42,21 @@ class ViewController: UIViewController {
         cancelButton.setTitle("Cancel", forState: .Normal)
         cancelButton.setTitleColor(UIColor.darkTextColor(), forState: .Normal)
         cancelButton.sizeToFit()
-        cancelButton.center.y = recordingButton!.center.y
+        cancelButton.center.y = recordingButton!.center.y - (recordingButton!.frame.height / 4.0)
         cancelButton.frame.origin.x = 20
         cancelButton.addTarget(self, action: #selector(ViewController.cancelRecording), forControlEvents: .TouchUpInside)
         view.addSubview(cancelButton)
         cancelButton.hidden = true
+        
+        
+        backButton.setTitle("Back", forState: .Normal)
+        backButton.setTitleColor(UIColor.darkTextColor(), forState: .Normal)
+        backButton.sizeToFit()
+        backButton.center.y = recordingButton!.center.y + (recordingButton!.frame.height / 4.0)
+        backButton.center.x = cancelButton.center.x
+        backButton.addTarget(self, action: #selector(ViewController.backRecording), forControlEvents: .TouchUpInside)
+        view.addSubview(backButton)
+        backButton.hidden = true
     }
 
 
@@ -53,8 +64,12 @@ class ViewController: UIViewController {
         recordingButton!.cancelRecording()
         recordingTimeLabel!.updateTime(0.0)
         self.cancelButton.hidden = true
+        self.backButton.hidden = true
     }
 
+    func backRecording() {
+        
+    }
 
 }
 
@@ -62,11 +77,13 @@ class ViewController: UIViewController {
 extension ViewController: RecordingButtonDelegate {
     func startRecording() {
         cancelButton.hidden = true
+        backButton.hidden = true
         recordingTimeLabel?.startRecording()
     }
     
     func endRecording() {
         cancelButton.hidden = false
+        backButton.hidden = false
         recordingTimeLabel?.endRecording()
     }
     
