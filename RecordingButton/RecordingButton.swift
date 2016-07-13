@@ -164,19 +164,25 @@ class RecordingButton: UIView {
         button.enabled = false
         let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.1 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
-            self.button.enabled = true
             self.status = Status.Idle
+            
+            self.button.enabled = true
             self.button.frame = CGRectMake(0, 0, self.button.frame.width * 1.3, self.button.frame.height * 1.3)
             self.button.center = CGPointMake(self.frame.width / 2.0, self.frame.height / 2.0)
             self.button.layer.cornerRadius = self.button.frame.height / 2.0
-            self.progressLayer.hidden = true
-            self.progressLayer.strokeEnd = 0
-            self.progress = 0.0
+
             self.timer?.invalidate()
             self.timer = nil
             self.timeoutTimer?.invalidate()
             self.timeoutTimer = nil
         }
+    }
+    
+    
+    func cancelRecording() {
+        self.progressLayer.hidden = true
+        self.progressLayer.strokeEnd = 0
+        self.progress = 0.0
     }
 }
 
