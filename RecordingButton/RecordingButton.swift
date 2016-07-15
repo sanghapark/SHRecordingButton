@@ -34,29 +34,22 @@ class RecordingButton: UIView {
     var mode: Mode = Mode.Pressing
     var status: Status = Status.Idle
     
-    var timeout:Double = 10
+    var timeout:Double = 60
     var timeoutTimer: NSTimer? = nil
     var timer: NSTimer? = nil
     
 
     var totalRecordingSec: Double {
         var total: Double = 0.0
-        for time in recordingTimes {
+        for (_, time) in progressPaths {
             total += time
         }
         return total
     }
     
     var startRecordingTime: Double = 0.0
-    var recordingTimes = [Double]()
     
-    private lazy var progressLayer: CAShapeLayer = {
-        let shape = CAShapeLayer()
-        shape.strokeStart = CGFloat(0.0)
-        shape.strokeEnd = CGFloat(0.0)
-        shape.fillColor = UIColor.clearColor().CGColor
-        return shape
-    }()
+    var progressPaths = [(CAShapeLayer, Double)]()
     
     private lazy var progressLayerBackground: CAShapeLayer = {
         let shape = CAShapeLayer()
@@ -105,23 +98,23 @@ class RecordingButton: UIView {
         progressLayerBackground.lineWidth = CGFloat(lineWidth)
         progressLayerBackground.strokeEnd = 1.0
         
-        layer.addSublayer(progressLayer)
+//        layer.addSublayer(progressLayer)
     }
     
     
     
     func didTouchDown(sender: UIButton) {
-        print("touch down")
-        
         if mode == Mode.Pressing {
+            addNewProgressPath()
             startRecording()
         }
         else {
             if status == Status.Idle {
+                addNewProgressPath()
                 startRecording()
             }
             else if status == Status.Paused {
-                recordingTimes.append(0.0)
+                addNewProgressPath()
                 startRecording()
             }
             else if status == Status.Recording {
@@ -132,7 +125,6 @@ class RecordingButton: UIView {
     }
     
     func didTouchUp(sender: UIButton) {
-        print("touch up inside")
         if mode == Mode.Pressing {
             delegate?.endRecording()
             pauseRecording()
@@ -141,32 +133,51 @@ class RecordingButton: UIView {
     
     
     func updateProgress() {
-        print("updateProgress")
-        
-        let recordingTime = NSDate().timeIntervalSince1970 - self.startRecordingTime
-        if recordingTimes.count > 0 {
-            recordingTimes[recordingTimes.count-1] = recordingTime
-        } else {
-            recordingTimes.append(recordingTime)
+        if let last = progressPaths.last {
+            
+            let recordingTime = NSDate().timeIntervalSince1970 - self.startRecordingTime
+            let startAngle = calculateStartAngle()
+            
+            
+            
+            
+            last.0.hidden = false
+            last.0.path = UIBezierPath(semiCircleInSize: self.frame.size, inset: CGFloat(inset), startAngle: startAngle).CGPath
+            last.0.strokeColor = lineColor.CGColor
+            last.0.lineWidth = CGFloat(lineWidth)
+            
+            if progressPaths.count > 1 {
+                let elapsedTime = Array(progressPaths[0...progressPaths.count-2]).map{ $0.1 }.reduce(0, combine: +)
+                last.0.strokeEnd = CGFloat(recordingTime / (timeout-elapsedTime))
+            } else {
+                last.0.strokeEnd = CGFloat(recordingTime / timeout)
+            }
+            
+            let updatedPath = (last.0, recordingTime)
+            
+            progressPaths[progressPaths.count - 1] = updatedPath
+
+            delegate?.updateProgress(totalRecordingSec)
         }
-        
-        let progress = totalRecordingSec
-        
-        progressLayer.hidden = false
-        progressLayer.path = UIBezierPath(semiCircleInSize: self.frame.size, inset: CGFloat(inset)).CGPath
-        progressLayer.strokeColor = lineColor.CGColor
-        progressLayer.lineWidth = CGFloat(lineWidth)
-        progressLayer.strokeEnd = CGFloat(progress) / CGFloat(timeout)
-        
-        delegate?.updateProgress(progress)
     }
     
     func timeoutRecording() {
-        print("time out recording...")
         delegate?.endRecording()
         endRecording()
     }
     
+    private func addNewProgressPath() -> CAShapeLayer {
+        let shape = CAShapeLayer()
+        shape.strokeStart = CGFloat(0.0)
+        shape.strokeEnd = CGFloat(0.0)
+        shape.fillColor = UIColor.clearColor().CGColor
+        
+        progressPaths.append((shape, 0.0))
+        
+        layer.addSublayer(shape)
+        
+        return shape
+    }
     
     private func startRecording() {
         self.timer?.invalidate()
@@ -227,42 +238,61 @@ class RecordingButton: UIView {
     
     
     func cancelRecording() {
-        self.progressLayer.hidden = true
-        self.progressLayer.strokeEnd = 0
-        
-        self.startRecordingTime = 0.0
-        self.recordingTimes.removeAll()
+        startRecordingTime = 0.0
+        for path in progressPaths {
+            path.0.hidden = true
+            path.0.strokeEnd = 0.0
+            path.0.removeFromSuperlayer()
+        }
+        progressPaths.removeAll()
     }
     
     func backRecording() {
-        self.recordingTimes.removeLast()
+        if let last = progressPaths.last {
+            last.0.hidden = true
+            last.0.strokeEnd = 0.0
+            last.0.removeFromSuperlayer()
+        }
+        progressPaths.removeLast()
         
         let progress = totalRecordingSec
-        
-        progressLayer.path = UIBezierPath(semiCircleInSize: self.frame.size, inset: CGFloat(inset)).CGPath
-        progressLayer.strokeColor = lineColor.CGColor
-        progressLayer.lineWidth = CGFloat(lineWidth)
-        progressLayer.strokeEnd = CGFloat(progress) / CGFloat(timeout)
-        
         delegate?.updateProgress(progress)
-        
-        if recordingTimes.count <= 0 {
+        if progressPaths.count <= 0 {
             delegate?.didBecomeIdle()
         }
+    }
+    
+    
+    
+    private func calculateStartAngle() -> CGFloat {
+        
+        if progressPaths.count > 1 {
+            let elapsedTime = Array(progressPaths[0...progressPaths.count-2]).map{ $0.1 }.reduce(0, combine: +)
+            let temp = elapsedTime / timeout
+            let prePath = CGFloat(2 * M_PI * temp)
+        
+//            let elapsedStrokeEnd = Array(progressPaths[0...progressPaths.count-2]).map{ $0.0.strokeEnd }.reduce(0, combine: +)
+//            let sePath = CGFloat(2.0 * M_PI) * elapsedStrokeEnd
+//            print("sum: \(CGFloat(1.5 * M_PI) + prePath)")
+//            print("ste: \(CGFloat(1.5 * M_PI) + sePath)")
+            
+            return CGFloat(1.5 * M_PI) + prePath
+        }
+        return CGFloat(1.5 * M_PI)
     }
 }
 
 
 extension UIBezierPath {
-    convenience init(semiCircleInSize size: CGSize, inset: CGFloat) {
+    convenience init(semiCircleInSize size: CGSize, inset: CGFloat, startAngle: CGFloat? = nil) {
         self.init()
         let center = CGPointMake(size.width / CGFloat(2.0), size.height / CGFloat(2.0))
         let minSize: CGFloat = size.width + 20
         let radius = minSize / CGFloat(2.0) - inset
         
-        let startAngle = CGFloat(1.5 * M_PI)
-        let endAngle = CGFloat(3.5 * M_PI)
+        let start = startAngle ?? CGFloat(1.5 * M_PI)
+        let end = CGFloat(3.5 * M_PI)
 
-        self.addArcWithCenter(center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
+        self.addArcWithCenter(center, radius: radius, startAngle: start, endAngle: end, clockwise: true)
     }
 }
