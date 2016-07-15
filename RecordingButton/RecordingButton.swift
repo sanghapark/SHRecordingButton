@@ -37,6 +37,7 @@ class RecordingButton: UIView {
     var timeout:Double = 0
     var timeoutTimer: NSTimer? = nil
     var timer: NSTimer? = nil
+    var selectedPathTimer: NSTimer? = nil
     
 
     var totalRecordingSec: Double {
@@ -248,6 +249,23 @@ class RecordingButton: UIView {
     }
     
     func backRecording() {
+        if let last = progressPaths.last {
+            selectedPathTimer = NSTimer.scheduledTimerWithTimeInterval(0.5, target: self, selector: #selector(RecordingButton.pathSelected), userInfo: nil, repeats: true)
+            last.0.strokeColor = UIColor.blackColor().CGColor
+        }
+    }
+    
+    func pathSelected() {
+        if let last = progressPaths.last {
+            last.0.hidden = !last.0.hidden
+        }
+    }
+    
+    func deleteRecording() {
+        
+        selectedPathTimer?.invalidate()
+        selectedPathTimer = nil
+        
         if let last = progressPaths.last {
             last.0.hidden = true
             last.0.strokeEnd = 0.0

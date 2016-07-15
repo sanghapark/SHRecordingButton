@@ -68,8 +68,21 @@ class ViewController: UIViewController {
     }
 
     func backRecording() {
-        recordingButton!.backRecording()
+        guard let title = backButton.currentTitle  else { return }
+        if title == "Back" {
+            backButton.setTitle("Delete", forState: .Normal)
+            backButton.sizeToFit()
+            backButton.center.x = cancelButton.center.x
+            recordingButton!.backRecording()
+        } else if title == "Delete" {
+            backButton.setTitle("Back", forState: .Normal)
+            backButton.sizeToFit()
+            backButton.center.x = cancelButton.center.x
+            recordingButton!.deleteRecording()
+            
+        }
     }
+    
 
 }
 
