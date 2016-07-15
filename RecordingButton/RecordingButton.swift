@@ -34,7 +34,7 @@ class RecordingButton: UIView {
     var mode: Mode = Mode.Pressing
     var status: Status = Status.Idle
     
-    var timeout:Double = 60
+    var timeout:Double = 0
     var timeoutTimer: NSTimer? = nil
     var timer: NSTimer? = nil
     

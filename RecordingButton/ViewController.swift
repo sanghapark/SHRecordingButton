@@ -29,7 +29,7 @@ class ViewController: UIViewController {
         recordingButton = RecordingButton(center: CGPointMake(screenW / 2, screenH - 70), size: CGSizeMake(70, 70))
         recordingButton!.mode = .Pressed
 //        recordingButton!.mode = .Pressing
-        recordingButton!.timeout = 60.0
+        recordingButton!.timeout = 30.0
         recordingButton!.delegate = self
         view.addSubview(recordingButton!)
         
