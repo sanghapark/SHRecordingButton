@@ -105,6 +105,14 @@ class RecordingButton: UIView {
     
     
     func didTouchDown(sender: UIButton) {
+        
+        if let last = progressPaths.last {
+            selectedPathTimer?.invalidate()
+            selectedPathTimer = nil
+            last.0.hidden = false
+            last.0.strokeColor = UIColor.redColor().CGColor
+        }
+
         if mode == Mode.Pressing {
             addNewProgressPath()
             startRecording()

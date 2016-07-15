@@ -91,6 +91,7 @@ extension ViewController: RecordingButtonDelegate {
     func startRecording() {
         cancelButton.hidden = true
         backButton.hidden = true
+        backButton.setTitle("Back", forState: .Normal)
         recordingTimeLabel?.startRecording()
     }
     
