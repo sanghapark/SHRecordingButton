@@ -187,7 +187,7 @@ class RecordingButton: UIView {
         self.timeoutTimer = nil
         
         status = Status.Recording
-        button.frame = CGRectMake(0, 0, button.frame.width / 1.3, button.frame.height / 1.3)
+        button.frame = CGRectMake(0, 0, button.frame.width / 1.5, button.frame.height / 1.5)
         button.center = CGPointMake(frame.width / 2, frame.height / 2)
         button.layer.cornerRadius = button.frame.height / 5
         
@@ -206,7 +206,7 @@ class RecordingButton: UIView {
         self.status = Status.Paused
         
         self.button.enabled = true
-        self.button.frame = CGRectMake(0, 0, self.button.frame.width * 1.3, self.button.frame.height * 1.3)
+        self.button.frame = CGRectMake(0, 0, self.button.frame.width * 1.5, self.button.frame.height * 1.5)
         self.button.center = CGPointMake(self.frame.width / 2.0, self.frame.height / 2.0)
         self.button.layer.cornerRadius = self.button.frame.height / 2.0
 
