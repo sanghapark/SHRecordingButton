@@ -293,7 +293,7 @@ class RecordingButton: UIView {
     private func calculateStartAngle() -> CGFloat {
         
         if progressPaths.count > 1 {
-            let elapsedTime = Array(progressPaths[0...progressPaths.count-2]).map{ $0.1 }.reduce(0, combine: +)
+            let elapsedTime = progressPaths[0...progressPaths.count-2].map{ $0.1 }.reduce(0, combine: +)
             let temp = elapsedTime / timeout
             let prePath = CGFloat(2 * M_PI * temp)
         
